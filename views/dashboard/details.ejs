@@ -1,0 +1,34 @@
+<% const body = `
+<a href="/dashboard" class="text-sm text-sky-600 hover:underline">&larr; Back to dashboard</a>
+<div class="mt-2 mb-6">
+  <h1 class="text-2xl font-bold">/${url.shortCode}</h1>
+  <p class="text-slate-500 text-sm break-all">${url.originalUrl}</p>
+  <p class="text-sm mt-1">
+    <span class="font-medium">${analytics.totalClicks}</span> clicks ·
+    <span class="font-medium">${analytics.uniqueVisitors}</span> unique visitors (last 30 days)
+  </p>
+  <a href="/api/v1/urls/${url.id}/qr" target="_blank" class="inline-block mt-2 text-sm bg-slate-900 text-white px-3 py-1.5 rounded hover:bg-slate-700">Download QR code</a>
+</div>
+
+<div class="grid md:grid-cols-2 gap-6">
+  <div class="bg-white rounded-xl border border-slate-200 p-6">
+    <h2 class="font-semibold mb-4">Clicks over time</h2>
+    <div id="chart-time" class="space-y-1"></div>
+  </div>
+  <div class="bg-white rounded-xl border border-slate-200 p-6">
+    <h2 class="font-semibold mb-4">By browser</h2>
+    <div id="chart-browser" class="space-y-2"></div>
+  </div>
+  <div class="bg-white rounded-xl border border-slate-200 p-6">
+    <h2 class="font-semibold mb-4">By device</h2>
+    <div id="chart-device" class="space-y-2"></div>
+  </div>
+  <div class="bg-white rounded-xl border border-slate-200 p-6">
+    <h2 class="font-semibold mb-4">By OS</h2>
+    <div id="chart-os" class="space-y-2"></div>
+  </div>
+</div>
+`; %>
+<%- include('../layouts/main', { title, body, user }) %>
+<script>window.__analytics = <%- JSON.stringify(analytics) %>;</script>
+<script src="/js/analytics.js"></script>

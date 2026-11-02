@@ -1,0 +1,71 @@
+<% const body = `
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-bold">Dashboard</h1>
+</div>
+
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+  <div class="bg-white rounded-xl border border-slate-200 p-5">
+    <div class="text-sm text-slate-500">Total URLs</div>
+    <div class="text-3xl font-bold" id="stat-total">${stats.total}</div>
+  </div>
+  <div class="bg-white rounded-xl border border-slate-200 p-5">
+    <div class="text-sm text-slate-500">Total clicks</div>
+    <div class="text-3xl font-bold" id="stat-clicks">${stats.totalClicks}</div>
+  </div>
+  <div class="bg-white rounded-xl border border-slate-200 p-5">
+    <div class="text-sm text-slate-500">Active</div>
+    <div class="text-3xl font-bold text-emerald-600">${stats.active}</div>
+  </div>
+  <div class="bg-white rounded-xl border border-slate-200 p-5">
+    <div class="text-sm text-slate-500">Expired / disabled</div>
+    <div class="text-3xl font-bold text-amber-600">${stats.expired + stats.disabled}</div>
+  </div>
+</div>
+
+<div class="bg-white rounded-xl border border-slate-200 p-6 mb-8">
+  <h2 class="text-lg font-semibold mb-4">Create a short link</h2>
+  <form id="create-form" class="grid md:grid-cols-[1fr_auto] gap-3">
+    <div class="grid md:grid-cols-3 gap-3">
+      <input name="originalUrl" type="url" required placeholder="https://example.com/very/long/url"
+             class="md:col-span-1 border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+      <input name="customAlias" type="text" placeholder="Custom alias (optional)"
+             class="border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+      <input name="expiresAt" type="datetime-local"
+             class="border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+    </div>
+    <button type="submit" class="bg-sky-600 hover:bg-sky-500 text-white font-medium rounded px-5 py-2">Shorten</button>
+  </form>
+  <div id="create-result" class="hidden mt-4 text-sm"></div>
+</div>
+
+<div class="bg-white rounded-xl border border-slate-200 p-6">
+  <div class="flex flex-col md:flex-row md:items-center gap-3 mb-4">
+    <h2 class="text-lg font-semibold mr-auto">Your links</h2>
+    <input id="search" type="search" placeholder="Search…" value="${(query.search || '').replace(/"/g, '&quot;')}"
+           class="border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500" />
+    <div class="flex gap-1 text-sm" id="filters">
+      ${['all','active','expired','disabled'].map(s => `
+        <button data-status="${s}" class="filter-btn px-3 py-1.5 rounded border ${ (query.status || 'all') === s ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-300 hover:bg-slate-100' }">${s[0].toUpperCase() + s.slice(1)}</button>
+      `).join('')}
+    </div>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-slate-500 border-b border-slate-200">
+          <th class="py-2 pr-4">Short URL</th>
+          <th class="py-2 pr-4">Destination</th>
+          <th class="py-2 pr-4">Clicks</th>
+          <th class="py-2 pr-4">Status</th>
+          <th class="py-2">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="urls-table"><tr><td colspan="5" class="py-6 text-center text-slate-400">Loading…</td></tr></tbody>
+    </table>
+  </div>
+  <div id="pagination"></div>
+</div>
+`; %>
+<%- include('../layouts/main', { title, body, user }) %>
+<script>window.__dashboardQuery = <%- JSON.stringify(query || {}) %>;</script>
+<script src="/js/dashboard.js"></script>

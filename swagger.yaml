@@ -1,0 +1,333 @@
+openapi: 3.0.3
+info:
+  title: Shortly API
+  description: URL Shortening & Analytics Platform — REST API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Local development
+
+paths:
+  /health:
+    get:
+      summary: Liveness check
+      tags: [Ops]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+
+  /ready:
+    get:
+      summary: Readiness check (PostgreSQL + Redis)
+      tags: [Ops]
+      responses:
+        '200': { description: Ready }
+        '503': { description: Not ready }
+
+  /api/v1/auth/register:
+    post:
+      summary: Register a new account
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserResponse' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+
+  /api/v1/auth/login:
+    post:
+      summary: Log in (sets a session cookie)
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+
+  /api/v1/auth/logout:
+    post:
+      summary: Log out (destroys the session)
+      tags: [Auth]
+      responses:
+        '200': { description: Logged out }
+
+  /api/v1/urls:
+    post:
+      summary: Create a short URL
+      tags: [URLs]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [originalUrl]
+              properties:
+                originalUrl: { type: string, example: 'https://example.com/very/long/url' }
+                customAlias: { type: string, example: 'my-link' }
+                expiresAt: { type: string, format: date-time }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UrlResponse' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+    get:
+      summary: List my URLs (paginated, searchable, filterable)
+      tags: [URLs]
+      parameters:
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, default: 10 } }
+        - { name: search, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string, enum: [all, active, expired, disabled] } }
+        - { name: sort, in: query, schema: { type: string, enum: [newest, oldest, clicks] } }
+      responses:
+        '200':
+          description: Paginated list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      urls: { type: array, items: { $ref: '#/components/schemas/Url' } }
+                      pagination: { $ref: '#/components/schemas/Pagination' }
+
+  /api/v1/urls/{id}:
+    get:
+      summary: Get one of my URLs
+      tags: [URLs]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UrlResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      summary: Update a URL (destination, alias, active flag, expiry)
+      tags: [URLs]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                originalUrl: { type: string }
+                customAlias: { type: string, nullable: true }
+                isActive: { type: boolean }
+                expiresAt: { type: string, format: date-time, nullable: true }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UrlResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    delete:
+      summary: Delete a URL
+      tags: [URLs]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '204': { description: Deleted }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/urls/{id}/analytics:
+    get:
+      summary: Analytics for one URL
+      tags: [Analytics]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+        - { name: days, in: query, schema: { type: integer, default: 30 } }
+      responses:
+        '200':
+          description: Aggregated analytics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/Analytics' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/v1/urls/{id}/qr:
+    get:
+      summary: QR code PNG for a URL
+      tags: [URLs]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: PNG image
+          content:
+            image/png:
+              schema: { type: string, format: binary }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /{shortCode}:
+    get:
+      summary: Redirect to the original URL
+      tags: [Redirect]
+      parameters:
+        - { name: shortCode, in: path, required: true, schema: { type: string } }
+      responses:
+        '302': { description: Redirect to the original URL }
+        '404': { description: Unknown or disabled code }
+        '410': { description: Expired link }
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        email: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    UserResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          type: object
+          properties:
+            user: { $ref: '#/components/schemas/User' }
+    Url:
+      type: object
+      properties:
+        id: { type: integer }
+        shortCode: { type: string }
+        customAlias: { type: string, nullable: true }
+        shortUrl: { type: string }
+        originalUrl: { type: string }
+        isActive: { type: boolean }
+        isExpired: { type: boolean }
+        expiresAt: { type: string, format: date-time, nullable: true }
+        clickCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    UrlResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: { $ref: '#/components/schemas/Url' }
+    Pagination:
+      type: object
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        totalPages: { type: integer }
+    Analytics:
+      type: object
+      properties:
+        totalClicks: { type: integer }
+        uniqueVisitors: { type: integer }
+        clicksOverTime:
+          type: array
+          items:
+            type: object
+            properties:
+              day: { type: string }
+              clicks: { type: integer }
+        byBrowser:
+          type: array
+          items:
+            type: object
+            properties:
+              label: { type: string }
+              clicks: { type: integer }
+        byOs:
+          type: array
+          items:
+            type: object
+            properties:
+              label: { type: string }
+              clicks: { type: integer }
+        byDevice:
+          type: array
+          items:
+            type: object
+            properties:
+              label: { type: string }
+              clicks: { type: integer }
+    Error:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        error:
+          type: object
+          properties:
+            code: { type: string, example: URL_NOT_FOUND }
+            message: { type: string, example: 'URL does not exist' }
+  responses:
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: Conflict (e.g. alias already taken)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    RateLimited:
+      description: Too many requests
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

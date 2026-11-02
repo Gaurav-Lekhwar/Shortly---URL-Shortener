@@ -1,0 +1,20 @@
+<% /* Expects: pagination {page, limit, total, totalPages}, baseUrl (string), extra (query string) */ %>
+<% if (pagination && pagination.totalPages > 1) { %>
+<nav class="flex items-center gap-2 mt-6 text-sm" aria-label="Pagination">
+  <% const prevDisabled = pagination.page <= 1; %>
+  <% const nextDisabled = pagination.page >= pagination.totalPages; %>
+  <a href="<%= baseUrl %>?page=<%= pagination.page - 1 %><%= extra %>"
+     class="px-3 py-1.5 rounded border <%= prevDisabled ? 'pointer-events-none opacity-40 border-slate-200' : 'border-slate-300 hover:bg-slate-100' %>">Previous</a>
+  <% for (let p = 1; p <= pagination.totalPages; p++) { %>
+    <% if (p === 1 || p === pagination.totalPages || Math.abs(p - pagination.page) <= 2) { %>
+      <a href="<%= baseUrl %>?page=<%= p %><%= extra %>"
+         class="px-3 py-1.5 rounded border <%= p === pagination.page ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-300 hover:bg-slate-100' %>"><%= p %></a>
+    <% } else if (Math.abs(p - pagination.page) === 3) { %>
+      <span class="text-slate-400">…</span>
+    <% } %>
+  <% } %>
+  <a href="<%= baseUrl %>?page=<%= pagination.page + 1 %><%= extra %>"
+     class="px-3 py-1.5 rounded border <%= nextDisabled ? 'pointer-events-none opacity-40 border-slate-200' : 'border-slate-300 hover:bg-slate-100' %>">Next</a>
+  <span class="text-slate-500 ml-2"><%= pagination.total %> total</span>
+</nav>
+<% } %>

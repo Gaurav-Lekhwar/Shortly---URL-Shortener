@@ -1,0 +1,9 @@
+<% const body = `
+<div class="max-w-md mx-auto mt-16 text-center">
+  <div class="text-7xl font-bold text-slate-200">429</div>
+  <h1 class="text-xl font-semibold mt-2">Too many requests</h1>
+  <p class="text-slate-500 mt-1">${message || 'You are going a bit too fast. Please wait a moment and try again.'}</p>
+  <a href="/" class="inline-block mt-6 bg-sky-600 hover:bg-sky-500 text-white px-4 py-2 rounded">Home</a>
+</div>
+`; %>
+<%- include('../layouts/main', { title, body, user: null }) %>

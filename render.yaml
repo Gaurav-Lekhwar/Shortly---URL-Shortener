@@ -1,0 +1,64 @@
+# Render Blueprint for Shortly — URL shortener
+# Deploy: Render Dashboard → New → Blueprint → connect your GitHub repo.
+# This creates: web app + background worker + PostgreSQL + Redis (Key Value).
+
+services:
+  # Public web app (same Dockerfile as local)
+  - type: web
+    name: shortly-app
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: shortly-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: shortly-redis
+          type: keyvalue
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true # Render generates a fresh secret on first deploy
+
+  # Background worker for the analytics queue (same image, different start command)
+  - type: worker
+    name: shortly-worker
+    runtime: docker
+    plan: free
+    region: India
+    dockerfilePath: ./Dockerfile
+    dockerCommand: node workers/analytics.worker.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: shortly-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: shortly-redis
+          type: keyvalue
+          property: connectionString
+
+  # Managed Redis for the BullMQ analytics queue
+  # noeviction = never drop queued jobs when memory fills up
+  - type: keyvalue
+    name: shortly-redis
+    plan: free
+    region: singapore
+    maxmemoryPolicy: noeviction
+    ipAllowList: [] # private network only
+
+databases:
+  - name: shortly-db
+    plan: free
+    region: singapore
+    postgresMajorVersion: "16"
+    ipAllowList: [] # private network only

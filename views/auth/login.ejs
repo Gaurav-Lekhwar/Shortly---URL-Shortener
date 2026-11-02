@@ -1,0 +1,20 @@
+<% const body = `
+<div class="max-w-md mx-auto mt-10 bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+  <h1 class="text-2xl font-bold mb-1">Welcome back</h1>
+  <p class="text-slate-500 text-sm mb-6">Log in to manage your short links.</p>
+  ${typeof error !== 'undefined' && error ? `<div class="mb-4 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded px-3 py-2">${error}</div>` : ''}
+  <form action="/api/v1/auth/login" method="POST" class="space-y-4">
+    <div>
+      <label class="block text-sm font-medium mb-1" for="email">Email</label>
+      <input id="email" name="email" type="email" required class="w-full border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1" for="password">Password</label>
+      <input id="password" name="password" type="password" required class="w-full border border-slate-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+    </div>
+    <button type="submit" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-medium rounded px-3 py-2">Log in</button>
+  </form>
+  <p class="text-sm text-slate-500 mt-4">No account? <a href="/register" class="text-sky-600 hover:underline">Sign up</a></p>
+</div>
+`; %>
+<%- include('../layouts/main', { title, body, user: null }) %>
