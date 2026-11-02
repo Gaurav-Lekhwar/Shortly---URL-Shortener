@@ -5,7 +5,7 @@ custom aliases and expirations, Redis-cached redirects, rate limiting, and
 asynchronous click analytics via BullMQ — all in a modular Express monolith with
 a server-rendered (EJS + Tailwind) dashboard.
 
-live link = https://shortly-url-shortener-pocp.onrender.com
+live link = https://shortly-app-gawz.onrender.com
 
 ## Quick start (Docker)
 
