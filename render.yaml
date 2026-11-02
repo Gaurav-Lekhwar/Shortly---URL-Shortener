@@ -31,7 +31,7 @@ services:
     name: shortly-worker
     runtime: docker
     plan: free
-    region: India
+    region: singapore
     dockerfilePath: ./Dockerfile
     dockerCommand: node workers/analytics.worker.js
     envVars:
